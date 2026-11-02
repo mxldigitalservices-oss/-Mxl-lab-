@@ -1,8 +1,5 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
-  "deploy": {
-    "startCommand": "gunicorn app:app --workers 2 --threads 4 --timeout 30 --bind 0.0.0.0:$PORT",
-    "healthcheckPath": "/health",
-    "restartPolicyType": "ON_FAILURE"
-  }
+  "build": { "builder": "DOCKERFILE", "dockerfilePath": "Dockerfile.runner" },
+  "deploy": { "healthcheckPath": "/health", "restartPolicyType": "ON_FAILURE" }
 }
