@@ -105,6 +105,7 @@ function select(type, item) {
   $("#brief-title").textContent = item.title;
   $("#brief").textContent = type === "lesson" ? item.content : item.description;
   $("#submit").hidden = type !== "challenge";
+  if (window.MXL) MXL.setLang(item.language || "python");
   $("#out").textContent = "La salida aparecerá aquí.";
   updateGutter();
   renderLists();
@@ -147,6 +148,7 @@ function renderAudit(report) {
 }
 
 async function execute(kind) {
+  if (kind === "run" && window.MXL && MXL.isBrowser()) return MXL.preview();
   if (!state.user) return setStatus("Inicia sesión para ejecutar código.", true);
   const code = $("#code").value;
   const current = state.current;
@@ -157,7 +159,7 @@ async function execute(kind) {
     const data = kind === "submit"
       ? await api(`/api/challenges/${current.slug}/submit`, { code })
       : await api("/api/run", {
-          code, stdin: $("#stdin").value,
+          code, stdin: $("#stdin").value, language: $("#lang").value,
           lesson: current && current.type === "lesson" ? current.slug : null,
         });
     showResult(data, kind);

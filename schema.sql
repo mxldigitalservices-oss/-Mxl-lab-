@@ -108,3 +108,59 @@ $$, E'15\n', E'1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFi
 # tu solución
 $$, E'reconocer\n', 'True', 15)
 ON CONFLICT (slug) DO NOTHING;
+
+-- ===== v2: multilenguaje y terminal =====
+ALTER TABLE lessons    ADD COLUMN IF NOT EXISTS language VARCHAR(16) NOT NULL DEFAULT 'python';
+ALTER TABLE challenges ADD COLUMN IF NOT EXISTS language VARCHAR(16) NOT NULL DEFAULT 'python';
+
+CREATE TABLE IF NOT EXISTS terminal_completions (
+    id           BIGSERIAL PRIMARY KEY,
+    user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    scenario     VARCHAR(64) NOT NULL,
+    score        INTEGER NOT NULL CHECK (score BETWEEN 0 AND 100),
+    completed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, scenario)
+);
+
+INSERT INTO lessons (slug, title, content, starter_code, position, language) VALUES
+('js-funciones', 'JavaScript: funciones',
+ $$Una función agrupa instrucciones reutilizables. Ejecuta el ejemplo y cambia el nombre.$$,
+ $$function saludar(nombre) {
+  return `Hola, ${nombre}`;
+}
+console.log(saludar("MXL"));
+$$, 4, 'javascript'),
+('c-hola', 'C: tu primer programa',
+ $$En C el programa empieza en main y se compila antes de ejecutarse. printf imprime en pantalla.$$,
+ $$#include <stdio.h>
+
+int main(void) {
+    printf("Hola, MXL\n");
+    return 0;
+}
+$$, 5, 'c'),
+('bash-pipes', 'Bash: pipes y filtros',
+ $$Una tubería (|) envía la salida de un comando al siguiente. grep -n filtra mostrando el número de línea.$$,
+ $$printf "uno\ndos\ntres\n" | grep -n "o"
+echo "Usuario: $(whoami)"
+$$, 6, 'bash')
+ON CONFLICT (slug) DO NOTHING;
+
+INSERT INTO challenges (slug, title, description, starter_code, test_input, expected_output, points, language) VALUES
+('js-suma', 'Suma en JavaScript',
+ $$Lee dos enteros (uno por línea) e imprime su suma con console.log.$$,
+ $$const [a, b] = require("fs").readFileSync(0, "utf8").trim().split("\n").map(Number);
+// imprime la suma
+$$, E'3\n4\n', '7', 10, 'javascript'),
+('c-suma', 'Suma en C',
+ $$Lee dos enteros con scanf e imprime su suma seguida de un salto de línea.$$,
+ $$#include <stdio.h>
+
+int main(void) {
+    int a, b;
+    scanf("%d %d", &a, &b);
+    /* imprime la suma */
+    return 0;
+}
+$$, E'3\n4\n', '7', 15, 'c')
+ON CONFLICT (slug) DO NOTHING;

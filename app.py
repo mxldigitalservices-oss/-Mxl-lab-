@@ -23,6 +23,8 @@ load_dotenv()
 import database as db  # noqa: E402  (se importa tras cargar .env)
 from auditor import audit_code  # noqa: E402
 from sandbox import run_code  # noqa: E402
+from languages import SERVER_LANGUAGES  # noqa: E402
+import lab_routes  # noqa: E402
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024  # tope de 64 KB por petición
@@ -119,12 +121,13 @@ def clean_doc(doc):
     return out
 
 
-def persist_run(user_id, kind, code, stdin, result, report, lesson_id=None, challenge_id=None):
+def persist_run(user_id, kind, code, stdin, result, report, lesson_id=None, challenge_id=None,
+                language="python"):
     """Guarda traza e informe en Mongo y calificación/historial en PostgreSQL."""
     mongo = db.get_mongo()
     now = datetime.now(timezone.utc)
     trace_id = mongo.code_traces.insert_one({
-        "user_id": user_id, "kind": kind, "code": code, "stdin": stdin,
+        "user_id": user_id, "kind": kind, "language": language, "code": code, "stdin": stdin,
         "stdout": result["stdout"], "stderr": result["stderr"],
         "exit_code": result["exit_code"], "duration_ms": result["duration_ms"],
         "created_at": now,
@@ -229,15 +232,15 @@ def me():
 # ------------------------------------------------------------------ Contenido
 @app.get("/api/lessons")
 def lessons():
-    rows = cached_rows("cache:lessons",
-                       "SELECT slug, title, content, starter_code FROM lessons ORDER BY position")
+    rows = cached_rows("cache:lessons:v2",
+                       "SELECT slug, title, content, starter_code, language FROM lessons ORDER BY position")
     return jsonify(lessons=rows)
 
 
 @app.get("/api/challenges")
 def challenges():
-    rows = cached_rows("cache:challenges",
-                       "SELECT id, slug, title, description, starter_code, points FROM challenges ORDER BY id")
+    rows = cached_rows("cache:challenges:v2",
+                       "SELECT id, slug, title, description, starter_code, language, points FROM challenges ORDER BY id")
     done = set()
     user = current_user()
     if user:
@@ -253,6 +256,9 @@ def challenges():
 def run():
     data = request.get_json(silent=True) or {}
     code, stdin, lesson_slug = data.get("code", ""), data.get("stdin", ""), data.get("lesson")
+    language = data.get("language", "python")
+    if language not in SERVER_LANGUAGES:
+        return jsonify(error="Lenguaje no soportado en el servidor."), 400
     if not isinstance(code, str) or not code.strip():
         return jsonify(error="Escribe algo de código primero."), 400
     if not isinstance(stdin, str):
@@ -267,10 +273,10 @@ def run():
             row = cur.fetchone()
             lesson_id = row["id"] if row else None
 
-    result = run_code(code, stdin)
-    report = audit_code(code, result)
+    result = run_code(language, code, stdin)
+    report = audit_code(code, result, language)
     report_id = safe_persist(g.user["id"], "lesson" if lesson_id else "free", code, stdin,
-                             result, report, lesson_id=lesson_id)
+                             result, report, lesson_id=lesson_id, language=language)
     update_state(g.user["id"], "ok" if result["ok"] else "error", report["score"])
     return jsonify(result=result, audit=report, report_id=report_id)
 
@@ -291,12 +297,13 @@ def submit_challenge(slug):
     if not challenge:
         return jsonify(error="Reto no encontrado."), 404
 
-    result = run_code(code, challenge["test_input"])
+    language = challenge["language"]
+    result = run_code(language, code, challenge["test_input"])
     passed = result["ok"] and normalize(result["stdout"]) == normalize(challenge["expected_output"])
-    report = audit_code(code, result)
+    report = audit_code(code, result, language)
     attempts = db.get_redis().incr(f"attempts:{g.user['id']}:{challenge['id']}")  # contador de intentos
     report_id = safe_persist(g.user["id"], "challenge", code, challenge["test_input"], result,
-                             report, challenge_id=challenge["id"])
+                             report, challenge_id=challenge["id"], language=language)
 
     points_awarded = 0
     if passed:
@@ -346,6 +353,9 @@ def report(report_id):
     if not doc:
         return jsonify(error="Informe no encontrado."), 404
     return jsonify(report=clean_doc(doc))
+
+
+lab_routes.register(app, login_required, rate_limit)  # terminal simulada, probador HTTP, lenguajes
 
 
 @app.errorhandler(413)

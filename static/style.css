@@ -50,3 +50,30 @@ summary { cursor: pointer; color: var(--muted); }
   main { display: block; }
   #left, #right { border: 0; border-bottom: 1px solid var(--line); }
 }
+
+/* ---- v2: pestañas, terminal, API HTTP, editor modal ---- */
+select { padding: 6px 8px; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 4px; font: inherit; }
+#tabs { display: flex; gap: 6px; }
+.tab { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.tab.active { color: var(--accent); border-color: var(--accent); }
+.pane { display: flex; flex-direction: column; gap: 10px; min-height: 0; flex: 1; }
+.pane[hidden] { display: none; }
+#preview { width: 100%; min-height: 220px; background: #fff; border: 1px solid var(--line); border-radius: 4px; }
+#goals { margin: 0; padding: 0; list-style: none; }
+#goals li { padding: 2px 0; color: var(--muted); }
+#goals li.done { color: var(--ok); }
+#guide-body { padding: 8px 0; color: var(--muted); white-space: pre-wrap; }
+#guide-body strong { color: var(--text); }
+#term-out { margin: 0; padding: 12px; min-height: 220px; flex: 1; overflow: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+#term-out div { margin: 0; }
+.term-line { display: flex; gap: 8px; align-items: center; }
+.term-line input { flex: 1; margin: 0; }
+#term-prompt { color: var(--accent); white-space: nowrap; }
+#http-url { flex: 1; margin: 0; }
+#http-pane textarea, #pane-http textarea { width: 100%; padding: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; }
+#http-out { margin: 0; padding: 12px; min-height: 200px; flex: 1; overflow: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+#nano { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8, 11, 17, .8); z-index: 10; }
+#nano[hidden] { display: none; }
+#nano-box { width: min(760px, 94vw); display: flex; flex-direction: column; gap: 8px; padding: 14px; background: var(--panel); border: 1px solid var(--accent); border-radius: 4px; }
+#nano-title { color: var(--accent); font-weight: 600; }
+#nano-text { height: 50vh; padding: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; tab-size: 4; }

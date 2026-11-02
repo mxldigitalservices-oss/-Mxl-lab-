@@ -41,7 +41,7 @@ def _grade(score):
     return "F"
 
 
-def audit_code(code, run_result=None):
+def audit_code(code, run_result=None, language="python"):
     findings = []
 
     def add(severity, rule, line, message):
@@ -51,11 +51,12 @@ def audit_code(code, run_result=None):
     metrics = {"lines": len(lines), "sloc": sum(1 for l in lines if l.strip() and not l.strip().startswith("#")),
                "functions": 0, "classes": 0, "max_complexity": 0, "max_depth": 0}
 
-    try:
-        tree = ast.parse(code)
-    except SyntaxError as exc:
-        add("error", "syntax", exc.lineno or 0, f"Error de sintaxis: {exc.msg}")
-        tree = None
+    tree = None
+    if language == "python":  # el análisis del AST solo aplica a Python
+        try:
+            tree = ast.parse(code)
+        except SyntaxError as exc:
+            add("error", "syntax", exc.lineno or 0, f"Error de sintaxis: {exc.msg}")
 
     if tree is not None:
         metrics["max_depth"] = _depth(tree)
@@ -98,7 +99,7 @@ def audit_code(code, run_result=None):
     for number, text in enumerate(lines, 1):
         if len(text) > MAX_LINE:
             add("info", "line-length", number, f"Línea de {len(text)} caracteres (máx. {MAX_LINE}).")
-    if metrics["sloc"] > 15 and not any(l.strip().startswith("#") for l in lines):
+    if language == "python" and metrics["sloc"] > 15 and not any(l.strip().startswith("#") for l in lines):
         add("info", "comments", 0, "El programa no tiene comentarios.")
 
     if run_result:
@@ -106,7 +107,7 @@ def audit_code(code, run_result=None):
             add("error", "sandbox", 0, "El código fue bloqueado por las reglas de seguridad.")
         elif run_result.get("timed_out"):
             add("error", "timeout", 0, "La ejecución excedió el tiempo límite.")
-        elif not run_result.get("ok") and tree is not None:
+        elif not run_result.get("ok") and (tree is not None or language != "python"):
             add("error", "runtime", 0, "El programa terminó con error en tiempo de ejecución.")
 
     score = max(0, 100 - sum(PENALTY[f["severity"]] for f in findings))

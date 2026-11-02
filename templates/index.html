@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MXL Lab: práctica y auditoría de Python</title>
+  <title>MXL Lab: programación y administración</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -32,24 +32,55 @@
     </aside>
 
     <section id="center">
-      <div id="brief-box">
-        <h2 id="brief-title">Práctica libre</h2>
-        <p id="brief">Escribe Python y pulsa Ejecutar (Ctrl+Enter). Elige una lección o un reto en el panel izquierdo.</p>
+      <nav id="tabs">
+        <button class="tab active" data-pane="editor">Editor</button>
+        <button class="tab" data-pane="term">Terminal Linux</button>
+        <button class="tab" data-pane="http">API HTTP</button>
+      </nav>
+
+      <div id="pane-editor" class="pane">
+        <div id="brief-box">
+          <h2 id="brief-title">Práctica libre</h2>
+          <p id="brief">Elige un lenguaje y pulsa Ejecutar (Ctrl+Enter). HTML y CSS se previsualizan en el navegador.</p>
+        </div>
+        <div id="editor">
+          <pre id="gutter" aria-hidden="true">1</pre>
+          <textarea id="code" wrap="off" spellcheck="false" aria-label="Editor de código">print("Hola, MXL")</textarea>
+        </div>
+        <div class="bar">
+          <select id="lang" aria-label="Lenguaje"><option value="python">Python</option></select>
+          <button id="run">Ejecutar</button>
+          <button id="submit" hidden>Enviar solución</button>
+          <span id="status" class="muted"></span>
+        </div>
+        <details id="stdin-box">
+          <summary>Entrada estándar (input)</summary>
+          <textarea id="stdin" rows="3" spellcheck="false" aria-label="Entrada estándar"></textarea>
+        </details>
+        <pre id="out" aria-live="polite">La salida aparecerá aquí.</pre>
+        <iframe id="preview" title="Vista previa" sandbox="allow-scripts" hidden></iframe>
       </div>
-      <div id="editor">
-        <pre id="gutter" aria-hidden="true">1</pre>
-        <textarea id="code" wrap="off" spellcheck="false" aria-label="Editor de código">print("Hola, MXL")</textarea>
+
+      <div id="pane-term" class="pane" hidden>
+        <ul id="goals"></ul>
+        <details id="guide"><summary>Guía: nano, vim, sudo, búsqueda y respaldos</summary><div id="guide-body"></div></details>
+        <pre id="term-out" aria-live="polite"></pre>
+        <div class="term-line"><span id="term-prompt">alumno@mxl:~$</span>
+          <input id="term-in" autocomplete="off" spellcheck="false" aria-label="Comando"></div>
+        <div class="bar"><button id="term-reset" class="ghost">Reiniciar entorno</button>
+          <span class="muted">Simulador seguro: no toca el servidor real.</span></div>
       </div>
-      <div class="bar">
-        <button id="run">Ejecutar</button>
-        <button id="submit" hidden>Enviar solución</button>
-        <span id="status" class="muted"></span>
+
+      <div id="pane-http" class="pane" hidden>
+        <div class="row">
+          <select id="http-method" aria-label="Método"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>HEAD</option></select>
+          <input id="http-url" placeholder="https://api.github.com/zen" value="https://api.github.com/zen">
+          <button id="http-send">Enviar</button>
+        </div>
+        <textarea id="http-headers" rows="2" spellcheck="false" placeholder='Cabeceras en JSON: {"Accept": "application/json"}'></textarea>
+        <textarea id="http-body" rows="3" spellcheck="false" placeholder="Cuerpo de la petición (opcional)"></textarea>
+        <pre id="http-out">La respuesta aparecerá aquí. Solo se permiten destinos públicos de internet.</pre>
       </div>
-      <details>
-        <summary>Entrada estándar (input)</summary>
-        <textarea id="stdin" rows="3" spellcheck="false" aria-label="Entrada estándar"></textarea>
-      </details>
-      <pre id="out" aria-live="polite">La salida aparecerá aquí.</pre>
     </section>
 
     <aside id="right">
@@ -59,6 +90,17 @@
       <div id="history" class="muted">Inicia sesión para ver tu historial.</div>
     </aside>
   </main>
+
+  <div id="nano" hidden role="dialog" aria-modal="true" aria-labelledby="nano-title">
+    <div id="nano-box">
+      <div id="nano-title"></div>
+      <textarea id="nano-text" wrap="off" spellcheck="false" aria-label="Contenido del archivo"></textarea>
+      <div id="nano-help" class="muted"></div>
+      <div id="nano-msg" class="err"></div>
+      <div class="row"><button id="nano-save">Guardar</button><button id="nano-exit" class="ghost">Salir</button></div>
+    </div>
+  </div>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <script src="{{ url_for('static', filename='lab.js') }}"></script>
 </body>
 </html>
